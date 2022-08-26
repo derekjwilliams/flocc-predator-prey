@@ -8,19 +8,24 @@ import {
   utils
 } from "flocc";
 
-const GOAT_GAIN_FROM_FOOD = 11;
-const GOAT_REPRODUCE = 0.03;
-const MAX_GOAT = 6000;
+const goatReproductionEnergyMinimum = 840;
+const energyGainedByGoatConsumingPlants = 28;
+const reproductionLikelihoodForGoat = 0.03;
+const maximumNumberOfGoats = 120000;
 
-const SHEEP_GAIN_FROM_FOOD = 10;
-const SHEEP_REPRODUCE = 0.03;
-const MAX_SHEEP = 6000;
+const sheepReproductionEnergyMinimum = 1840;
+const energyGainedBySheepConsumingPlants = 50;
+const reproductionLikelihoodForSheep = 0.032;
+const maximumNumberOfSheep = 120000;
 
-const WOLF_REPRODUCE = 0.2;
-const WOLF_GAIN_FROM_FOOD = 20;
+const reproductionLikelihoodForWolf = 0.1;
+const energyGainedByWolfFromConsumingSheep = 20;
+const energyGainedByWolfFromConsumingGoat = 25;
+const wolfPredationRadius = 28;
+const wolfReproductionEnergyMinimum = 40;
 
-const width = 600;
-const height = 300;
+const width = 1500;
+const height = 500;
 
 const goatLocations = new Array(width * height);
 const sheepLocations = new Array(width * height);
@@ -46,7 +51,8 @@ environment.use(terrain);
 
 const chart = new LineChartRenderer(environment, {
   autoScale: true,
-  height: 200
+  widt: 600,
+  height: 400
 });
 chart.metric("sheep", {
   fn: utils.sum,
@@ -66,7 +72,7 @@ function addGoat() {
   const goat = new Agent({
     color: "blue",
     size: 1.5,
-    energy: Math.random() * 2 * GOAT_GAIN_FROM_FOOD,
+    energy: Math.random() * 2 * energyGainedByGoatConsumingPlants,
     x: utils.random(0, width),
     y: utils.random(0, height),
     goat: 1,
@@ -80,8 +86,8 @@ function addGoat() {
 function addSheep() {
   const animal = new Agent({
     color: "yellowgreen",
-    size: 1.5,
-    energy: Math.random() * 2 * SHEEP_GAIN_FROM_FOOD,
+    size: 1.8,
+    energy: Math.random() * 2 * energyGainedBySheepConsumingPlants,
     x: utils.random(0, width),
     y: utils.random(0, height),
     sheep: 1,
@@ -110,7 +116,7 @@ function addWolf() {
     new Agent({
       color: "red",
       size: 2,
-      energy: Math.random() * 2 * WOLF_GAIN_FROM_FOOD,
+      energy: Math.random() * 2 * energyGainedByWolfFromConsumingSheep,
       x: utils.random(0, width),
       y: utils.random(0, height),
       wolf: 1,
@@ -142,13 +148,13 @@ function moveSheep(agent) {
 function tickGoat(agent) {
   moveGoat(agent);
   agent.decrement("energy");
-  if (agent.get("energy") < 0) {
+  if (agent.get("energy") < 20) {
     removeGoat(agent);
   }
   const { x, y } = agent.getData();
   const grass = terrain.sample(x, y).g;
   if (grass > 0) {
-    const amountToEat = Math.min(GOAT_GAIN_FROM_FOOD, grass);
+    const amountToEat = Math.min(energyGainedByGoatConsumingPlants, grass);
     agent.increment("energy", amountToEat);
     [-1, 0, 1].forEach((_y) => {
       [-1, 0, 1].forEach((_x) => {
@@ -159,8 +165,8 @@ function tickGoat(agent) {
     terrain.set(x, y, grass - 8 * amountToEat);
   }
   // reproduce
-  if (Math.random() < GOAT_REPRODUCE) {
-    agent.set("energy", agent.get("energy") / 2);
+  if ((agent.get("energy") > goatReproductionEnergyMinimum) && (Math.random() < reproductionLikelihoodForGoat)) {
+    agent.set("energy", agent.get("energy") / 3);
     addGoat();
   }
 }
@@ -168,11 +174,11 @@ function tickGoat(agent) {
 function tickSheep(agent) {
   moveSheep(agent);
   agent.decrement("energy");
-  if (agent.get("energy") < 0) removeSheep(agent);
+  if (agent.get("energy") < 20) removeSheep(agent);
   const { x, y } = agent.getData();
   const grass = terrain.sample(x, y).g;
   if (grass > 0) {
-    const amountToEat = Math.min(SHEEP_GAIN_FROM_FOOD, grass);
+    const amountToEat = Math.min(energyGainedBySheepConsumingPlants, grass);
     agent.increment("energy", amountToEat);
     [-1, 0, 1].forEach((_y) => {
       [-1, 0, 1].forEach((_x) => {
@@ -183,21 +189,21 @@ function tickSheep(agent) {
     terrain.set(x, y, grass - 8 * amountToEat);
   }
   // reproduce
-  if (Math.random() < SHEEP_REPRODUCE) {
-    agent.set("energy", agent.get("energy") / 2);
+  if ((agent.get("energy") > sheepReproductionEnergyMinimum) && (Math.random() < reproductionLikelihoodForSheep)) {
+    agent.set("energy", agent.get("energy") / 3);
     addSheep();
   }
 }
 
 function moveWolf(agent) {
-  agent.increment("x", utils.random(-3, 3));
-  agent.increment("y", utils.random(-3, 3));
+  agent.increment("x", utils.random(-10, 10));
+  agent.increment("y", utils.random(-10, 10));
 }
 
 function tickWolf(agent) {
   moveWolf(agent);
   agent.decrement("energy");
-  if (agent.get("energy") < 0) {
+  if (agent.get("energy") < energyGainedByWolfFromConsumingGoat) {
     environment.removeAgent(agent);
     environment.decrement("wolves");
   }
@@ -205,9 +211,11 @@ function tickWolf(agent) {
   // at all wolf locations
   let goatHere = [];
   let sheepHere = [];
-  const r = 6;
-  for (let y = agent.get("y") - r; y < agent.get("y") + r; y++) {
-    for (let x = agent.get("x") - r; x < agent.get("x") + r; x++) {
+  // debugger
+  console.log("wolf energy:", agent.get("energy"))
+  const adjustedWolfPredationRadius = wolfPredationRadius;// * (agent.get("energy") / 2)
+  for (let y = agent.get("y") - adjustedWolfPredationRadius; y < agent.get("y") + adjustedWolfPredationRadius; y++) {
+    for (let x = agent.get("x") - adjustedWolfPredationRadius; x < agent.get("x") + adjustedWolfPredationRadius; x++) {
       const index =
         (x < 0 ? x + width : x >= width ? x - width : x) +
         (x < 0 ? y + height : y >= height ? y - height : y) * width;
@@ -221,28 +229,28 @@ function tickWolf(agent) {
       }
     }
   }
-  if (goatHere.length === 0 && sheepHere.length === 0) { 
-    return; // no prey here
-  }
-
-  // otherwise wolf gets to eat a sheep or a goat
-  const random = Math.random();
-  if (random < 0.5) {
-    if (sheepHere.length) {
+  if (goatHere.length !== 0 || sheepHere.length !== 0) {
+    let eatSheep = sheepHere.length !== 0
+    let eatGoat = goatHere.length !== 0
+    if (eatGoat && eatSheep) { // randomly pick one if there are both at the location
+      if (0.3 < Math.random()) { // goats are more nimble, i.e. can run faster than sheep
+        eatGoat
+      } else {
+        eatSheep
+      }
+    }
+    if (eatSheep) {
       removeSheep(environment.getAgentById(utils.sample(sheepHere)))
-      agent.increment("energy", WOLF_GAIN_FROM_FOOD)
-      if (Math.random() < WOLF_REPRODUCE) {
+      agent.increment("energy", energyGainedByWolfFromConsumingSheep)
+      if (agent.get("energy") > wolfReproductionEnergyMinimum && Math.random() < reproductionLikelihoodForWolf) {
         agent.set("energy", agent.get("energy") / 2);
         addWolf();
       }
     }
-  } 
-
-  else {
-    if (goatHere.length) {
+    if (eatGoat) {
       removeGoat(environment.getAgentById(utils.sample(goatHere)))
-      agent.increment("energy", WOLF_GAIN_FROM_FOOD)
-      if (Math.random() < WOLF_REPRODUCE) {
+      agent.increment("energy", energyGainedByWolfFromConsumingGoat)
+      if (agent.get("energy") > wolfReproductionEnergyMinimum &&  Math.random() < reproductionLikelihoodForWolf) {
         agent.set("energy", agent.get("energy") / 2);
         addWolf();
       }
@@ -264,12 +272,12 @@ function setup() {
 
 function run() {
   environment.tick();
-  if (environment.get("goat") >= MAX_GOAT) {
+  if (environment.get("goat") >= maximumNumberOfGoats) {
     window.alert("The goat have inherited the earth!");
-  } 
-  if (environment.get("sheep") >= MAX_SHEEP) {
+  }
+  if (environment.get("sheep") >= maximumNumberOfSheep) {
     window.alert("The sheep have inherited the earth!");
-  } 
+  }
   else if (environment.time < 3000) {
     requestAnimationFrame(run);
   }
