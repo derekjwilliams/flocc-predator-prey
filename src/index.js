@@ -12,11 +12,13 @@ const goatReproductionEnergyMinimum = 840;
 const energyGainedByGoatConsumingPlants = 28;
 const reproductionLikelihoodForGoat = 0.07;
 const maximumNumberOfGoats = 120000;
+const goatKidMortalityCoefficient = 0.66; // 0.5 is all survive, 2 kids
 
-const sheepReproductionEnergyMinimum = 1440;
+const sheepReproductionEnergyMinimum = 1540;
 const energyGainedBySheepConsumingPlants = 50;
 const reproductionLikelihoodForSheep = 0.032;
 const maximumNumberOfSheep = 120000;
+const sheepKidMortalityCoefficient = 0.56;
 
 const reproductionLikelihoodForWolf = 0.1;
 const energyGainedByWolfFromConsumingSheep = 20;
@@ -166,7 +168,7 @@ function tickGoat(agent) {
   }
   // reproduce
   if ((agent.get("energy") > goatReproductionEnergyMinimum) && (Math.random() < reproductionLikelihoodForGoat)) {
-    agent.set("energy", agent.get("energy") / 3);
+    agent.set("energy", agent.get("energy") / (1/(goatKidMortalityCoefficient/2)));
     addGoat();
   }
 }
@@ -190,7 +192,7 @@ function tickSheep(agent) {
   }
   // reproduce
   if ((agent.get("energy") > sheepReproductionEnergyMinimum) && (Math.random() < reproductionLikelihoodForSheep)) {
-    agent.set("energy", agent.get("energy") / 2);
+    agent.set("energy", agent.get("energy") / (1/(sheepKidMortalityCoefficient/2)));
     addSheep();
   }
 }
