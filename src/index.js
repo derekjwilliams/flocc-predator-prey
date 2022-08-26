@@ -12,9 +12,9 @@ const goatReproductionEnergyMinimum = 840;
 const energyGainedByGoatConsumingPlants = 28;
 const reproductionLikelihoodForGoat = 0.07;
 const maximumNumberOfGoats = 120000;
-const goatKidEnergyCoefficient = 0.9; // 0.5 is all survive, 2 kids, should never be less than 0.5
+const goatKidEnergyCoefficient = 0.9;
 
-const sheepReproductionEnergyMinimum = 1540;
+const sheepReproductionEnergyMinimum = 1240;
 const energyGainedBySheepConsumingPlants = 50;
 const reproductionLikelihoodForSheep = 0.032;
 const maximumNumberOfSheep = 120000;
@@ -23,7 +23,7 @@ const sheepKidEnergyCoefficient = 1.0;
 const reproductionLikelihoodForWolf = 0.1;
 const energyGainedByWolfFromConsumingSheep = 20;
 const energyGainedByWolfFromConsumingGoat = 25;
-const wolfPredationRadius = 28;
+const wolfPredationRadius = 10;
 const wolfReproductionEnergyMinimum = 40;
 
 const width = 1500;
@@ -58,7 +58,7 @@ const chart = new LineChartRenderer(environment, {
 });
 chart.metric("sheep", {
   fn: utils.sum,
-  color: "yellowgreen"
+  color: "green"
 });
 chart.metric("goat", {
   fn: utils.sum,
@@ -235,7 +235,7 @@ function tickWolf(agent) {
     let eatSheep = sheepHere.length !== 0
     let eatGoat = goatHere.length !== 0
     if (eatGoat && eatSheep) { // randomly pick one if there are both at the location
-      if (0.3 < Math.random()) { // goats are more nimble, i.e. can run faster than sheep
+      if (0.45 < Math.random()) { // goats are more nimble, i.e. can run faster than sheep
         eatGoat
       } else {
         eatSheep
