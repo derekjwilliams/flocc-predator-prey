@@ -13,7 +13,7 @@ const energyGainedByGoatConsumingPlants = 28;
 const reproductionLikelihoodForGoat = 0.07;
 const maximumNumberOfGoats = 120000;
 
-const sheepReproductionEnergyMinimum = 1840;
+const sheepReproductionEnergyMinimum = 1440;
 const energyGainedBySheepConsumingPlants = 50;
 const reproductionLikelihoodForSheep = 0.032;
 const maximumNumberOfSheep = 120000;
