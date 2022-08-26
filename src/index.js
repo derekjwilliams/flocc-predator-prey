@@ -10,7 +10,7 @@ import {
 
 const goatReproductionEnergyMinimum = 840;
 const energyGainedByGoatConsumingPlants = 28;
-const reproductionLikelihoodForGoat = 0.03;
+const reproductionLikelihoodForGoat = 0.07;
 const maximumNumberOfGoats = 120000;
 
 const sheepReproductionEnergyMinimum = 1840;
@@ -51,7 +51,7 @@ environment.use(terrain);
 
 const chart = new LineChartRenderer(environment, {
   autoScale: true,
-  widt: 600,
+  width: 1500,
   height: 400
 });
 chart.metric("sheep", {
@@ -190,7 +190,7 @@ function tickSheep(agent) {
   }
   // reproduce
   if ((agent.get("energy") > sheepReproductionEnergyMinimum) && (Math.random() < reproductionLikelihoodForSheep)) {
-    agent.set("energy", agent.get("energy") / 3);
+    agent.set("energy", agent.get("energy") / 2);
     addSheep();
   }
 }
@@ -278,7 +278,7 @@ function run() {
   if (environment.get("sheep") >= maximumNumberOfSheep) {
     window.alert("The sheep have inherited the earth!");
   }
-  else if (environment.time < 3000) {
+  else if (environment.time < 30000) {
     requestAnimationFrame(run);
   }
 }
